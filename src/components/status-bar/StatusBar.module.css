@@ -1,0 +1,56 @@
+
+
+.status-bar {
+    display: grid;
+    grid-template-columns: 33% auto 33%;
+    grid-template-rows: 100%;
+
+    background: #161920;
+    border-bottom: solid 2px #ffffff13;
+
+    padding: 8px;
+}
+
+.left-float {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.center-float {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+}
+
+.right-float {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+
+
+
+
+
+.view-link {
+    color: #ffffff;
+    font-size: 24px; 
+    margin: 8px;
+    
+    display: flex;
+
+    transition: color .1s;
+}
+
+.view-link:hover {
+    color: #df6060;
+}
+
+.view-link-active {
+    color: #ea3c3c;
+}
