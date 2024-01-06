@@ -1,0 +1,58 @@
+.main {
+    display: grid;
+    grid-template-columns: 600px auto;
+    grid-template-rows: 100%;
+
+    height: 100%;
+
+    position: relative;
+}
+
+.drive-control-panel {
+    display: flex;
+    flex-direction: column;
+    
+    overflow: auto;
+    padding: 24px;
+    max-height: 100%;
+    border-right: solid 2px #ffffff13;
+}
+
+.task {
+    border: solid 1px #ffffff;
+    border-radius: 8px;
+    padding: 24px;
+
+    width: 100%;
+}
+
+/* .task.ready {
+    border: solid 2px #61c758;
+} */
+
+.task>p {
+    margin: 8px 0;
+    font-size: 12px;
+}
+
+.task-list>div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+
+    height:max-content;
+
+    padding: 32px;
+}
+
+.task-list {
+}
+
+.finished {
+    color: #ffffff39;
+}
+
+.ready {
+    color: #61c758;
+}
