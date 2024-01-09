@@ -1,94 +1,59 @@
+"use client"
+
 import Image from 'next/image'
 import styles from './page.module.css'
+import { NavigationPanel } from '@/components/navigation-panel/navigation-panel'
+import { useEffect, useRef, useState } from 'react';
+import { AngleRangeSlider, CustomRangeSlider } from '@/components/custom-range-slider/CustomRangeSlider';
+
+
+const RAD_TO_DEG = 180 / Math.PI;
+const DEG_TO_RAD = 1 / RAD_TO_DEG;
+
+
+function toRad(degrees : number, minutes : number = 0, seconds : number = 0) {
+  return (degrees + minutes / 60 + seconds / 3600) * DEG_TO_RAD;
+}
 
 export default function Home() {
+  const [ heading, setHeading ] = useState(0);
+  const [ long, setLong ] = useState(0);
+  const [ lat, setLat ] = useState(0);
+
+  useEffect(() => {
+
+  });
+
+  // useEffect(() => {
+  //   window.addEventListener("mousemove", (e) => {
+  //     setHeadingRef.current((heading : number) => ((heading + 20 *e.movementX / window.innerWidth) + 360) % 360);
+  //   });
+
+  //   setInterval
+  // }, []);
+
+
+  
   return (
     <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>src/app/page.tsx</code>
-        </p>
-        <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
+      <div style={{width: "600px", height: "600px"}}>
+        <NavigationPanel 
+          heading={heading * DEG_TO_RAD} 
+          location={{lat: lat * DEG_TO_RAD, long: long * DEG_TO_RAD}} 
+          viewportSize={4} 
+          headingSetpoint={23.4 * DEG_TO_RAD}
+          waypoints={[
+            { location: { lat: toRad(0, 0.00053959296 ), long: 0 }, label: "1m N 0m W" },
+            // { location: { lat: -1, long: 0 } },
+            // { location: { lat: 0, long: 1 } },
+            { location: { lat: 0, long: toRad(0, 0.00053959296 ) }, label: "0m N 1m E" },
+          ]}
+          />
       </div>
-
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className={styles.grid}>
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p>Find in-depth information about Next.js features and API.</p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Learn <span>-&gt;</span>
-          </h2>
-          <p>Learn about Next.js in an interactive course with&nbsp;quizzes!</p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p>Explore starter templates for Next.js.</p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
+      <div style={{width: "300px"}}>
+        <AngleRangeSlider min={0} max={360} infinite={true} value={heading} onChange={(heading) => setHeading(heading)}/>
+        <AngleRangeSlider tickScale={10000000} min={-90} max={90} value={lat} onChange={(lat) => setLat(lat)}/>
+        <AngleRangeSlider tickScale={10000000} min={-180} max={180} value={long} onChange={(long) => setLong(long)}/> 
       </div>
     </main>
   )
