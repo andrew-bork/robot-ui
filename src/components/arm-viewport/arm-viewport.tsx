@@ -1,6 +1,6 @@
 "use client"
 import { useEffect, useRef } from "react";
-import { Scene, Camera, PerspectiveCamera, OrthographicCamera, MeshBasicMaterial, WebGLRenderer, Mesh, BoxGeometry, DirectionalLight, AmbientLight, MeshStandardMaterial, DirectionalLightHelper, Object3D } from "three";
+import { Scene, Camera, PerspectiveCamera, OrthographicCamera, MeshBasicMaterial, WebGLRenderer, Mesh, BoxGeometry, DirectionalLight, AmbientLight, MeshStandardMaterial, DirectionalLightHelper, Object3D, Vector3, GridHelper } from "three";
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 // ARM IS GOinG TO GET FUNKY
@@ -21,6 +21,7 @@ class ArmViewportScene {
     foreWrist: Object3D;
     hindWrist: Object3D;
 
+    grid: GridHelper;
 
     mainLight: DirectionalLight;
     // ambientLight: AmbientLight;
@@ -40,7 +41,8 @@ class ArmViewportScene {
         // this.camera = new OrthographicCamera()
         this.camera = new PerspectiveCamera( 75, this.width / this.height, 0.1, 1000);
         this.renderer = new WebGLRenderer({
-            canvas: canvas
+            canvas: canvas,
+            antialias: true,
         });
         
         this.renderer.setSize(this.width, this.height);
@@ -67,17 +69,21 @@ class ArmViewportScene {
         this.foreWrist = new Object3D();
         this.hindWrist = new Object3D();
 
+        this.grid = new GridHelper(10, 10);
+        this.grid.position.set(0, -1, 0);
+        this.scene.add(this.grid);
+
         const loader = new GLTFLoader();
         loader.load("/models/arm.glb", (gltf) => {
             // this.arm = gltf.scene;
             this.armBase = gltf.scene.children[0];
 
             this.hindArm = this.armBase.children.find((child) => child.name === "Hind_Arm") ?? this.hindArm;
-            this.foreArm = this.foreArm.children.find((child) => child.name === "Fore_Arm") ?? this.foreArm;
-            this.foreWrist = this.foreArm.children.find((child) => child.name === "Upper_Wrist") ?? this.foreWrist;
-            this.hindWrist = this.foreWrist.children.find((child) => child.name === "Lower_Wrist") ?? this.hindWrist;
+            this.foreArm = this.hindArm.children.find((child) => child.name === "Fore_Arm") ?? this.foreArm;
+            this.hindWrist = this.foreArm.children.find((child) => child.name === "Upper_Wrist") ?? this.hindWrist;
+            this.foreWrist = this.hindWrist.children.find((child) => child.name === "Lower_Wrist") ?? this.foreWrist;
 
-            // console.log(this.armBase, this.hindArm, this.foreArm, this.foreWrist, this.hindWrist);
+            console.log(this.armBase, this.hindArm, this.foreArm, this.foreWrist, this.hindWrist);
 
             this.armBase.position.set(0,-1,0);
             this.armBase.scale.set(1, 1, 1)
@@ -103,8 +109,12 @@ class ArmViewportScene {
      * @param hindWristAngle Radians
      * @param clawPosition Radians
      */
-    setArmPosition(armBaseAngle: number, hindArmAngle: number, foreArmAngle: number, foreWristAngle: number, hindWristAngle: number, clawPosition: number) {
-        this.armBase.rotateY(armBaseAngle)
+    setArmPositions(armBaseAngle: number, hindArmAngle: number, foreArmAngle: number, hindWristAngle: number, foreWristAngle: number, clawPosition: number) {
+        this.armBase.setRotationFromAxisAngle(new Vector3(0, 1, 0), armBaseAngle);
+        this.hindArm.setRotationFromAxisAngle(new Vector3(1, 0, 0), hindArmAngle);
+        this.foreArm.setRotationFromAxisAngle(new Vector3(1, 0, 0), foreArmAngle);
+        this.hindWrist.setRotationFromAxisAngle(new Vector3(1, 0, 0), hindWristAngle);
+        this.foreWrist.setRotationFromAxisAngle(new Vector3(0, 0, 1), foreWristAngle);
     }
 
     render() {
@@ -138,10 +148,14 @@ function useRenderLoop(render: (dt : number) => void) {
 
 
 interface ArmViewportArgs {
-
+    armBaseAngle : number;
+    foreArmAngle : number;
+    hindArmAngle : number;
+    foreWristAngle : number;
+    hindWristAngle : number;
 };
 
-export function ArmViewport({} : ArmViewportArgs) {
+export function ArmViewport({ armBaseAngle, hindArmAngle, foreArmAngle, hindWristAngle, foreWristAngle } : ArmViewportArgs) {
     const divRef = useRef<HTMLDivElement|null>(null);
     const canvasRef = useRef<HTMLCanvasElement|null>(null);
     const scene = useRef<ArmViewportScene|null>(null);
@@ -174,7 +188,11 @@ export function ArmViewport({} : ArmViewportArgs) {
     });
 
 
-    return <div ref={divRef} style={{height: "600px", width: "1200px"}}>
+    if(scene.current != null) {
+        scene.current.setArmPositions(armBaseAngle, hindArmAngle, foreArmAngle, hindWristAngle, foreWristAngle, 0);
+    }
+
+    return <div ref={divRef} style={{height: "100%", width: "100%"}}>
             <canvas ref={canvasRef} style={{height: "100%", width: "100%"}}></canvas>
         </div>
 }
