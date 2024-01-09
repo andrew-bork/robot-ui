@@ -3,7 +3,7 @@ import Image from 'next/image'
 import styles from './page.module.css'
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
 import { Vector, Vector2D } from '@/vector'
-import { CustomRangeSlider } from '@/components/custom-range-slider/CustomRangeSlider'
+import { AngleRangeSlider, CustomRangeSlider } from '@/components/custom-range-slider/CustomRangeSlider'
 
 
 interface Size {
@@ -344,7 +344,7 @@ export default function Drive() {
                 <CustomRangeSlider
                     infinite={false}
                     min={-MAX_SPEED} max={MAX_SPEED} 
-                    tickAmount={0.1} primaryTickModulo={1} secondaryTickModulo={0.5} 
+                    tickAmount={0.1} primaryTickPeriod={10} secondaryTickPeriod={5} 
                     tickScale={40} 
                     value={speed} 
                     toText={(value) => value.toFixed(1)} 
@@ -354,13 +354,33 @@ export default function Drive() {
                 <h4>Angular Speed</h4>
                 <CustomRangeSlider 
                     infinite={false}
+                    min={-MAX_ANGULAR_SPEED_DEG} max={MAX_ANGULAR_SPEED_DEG} 
+                    
+                    tickAmount={1} 
+                    tickScale={5} 
+                    primaryTickPeriod={15} 
+                    secondaryTickPeriod={5} 
+                    
                     barberMin={-maxAngularSpeed * 180 / Math.PI}
                     barberMax={maxAngularSpeed * 180 / Math.PI}
-                    min={-MAX_ANGULAR_SPEED_DEG} max={MAX_ANGULAR_SPEED_DEG} tickAmount={1} value={(speed / imaginaryWheelDist) * 180 / Math.PI} tickScale={5} primaryTickModulo={15} secondaryTickModulo={5} toText={(value) => value.toFixed(1)+"°/s"} onChange={(value) => {setAngularSpeed(value * Math.PI / 180, imaginaryWheelDist)}}/>
+                    
+                    value={(speed / imaginaryWheelDist) * 180 / Math.PI} 
+                    toText={(value) => value.toFixed(1)+"°/s"} 
+                    onChange={(value) => {setAngularSpeed(value * Math.PI / 180, imaginaryWheelDist)}}/>
                 <h4>Steering angle:</h4>
-                <CustomRangeSlider infinite={true} min={-180} max={180} tickAmount={10} value={steeringAngle} tickScale={0.5} toText={(value) => value.toFixed(1)+"°"} onChange={(value) => {setSteeringAngle(value)}}/>
+                <AngleRangeSlider 
+                    infinite={true} 
+                    min={-180} max={180} 
+                    tickScale={1} 
+                    tickAmount={5} 
+                    
+                    primaryTickPeriod={18} 
+                    secondaryTickPeriod={6} 
+                    
+                    value={steeringAngle} 
+                    onChange={(value) => {setSteeringAngle(value)}}/>
                 <h4>Steering axis angle</h4>
-                <CustomRangeSlider infinite={true} min={-180} max={180} tickAmount={10} value={steeringAxisAngle} tickScale={0.5} toText={(value) => value.toFixed(1)+"°"} onChange={(value) => {setSteeringAxisAngle(value)}} setpoint={0}/>
+                <AngleRangeSlider infinite={true} min={-180} max={180} tickScale={1} primaryTickPeriod={18} secondaryTickPeriod={6} tickAmount={5} value={steeringAxisAngle} toText={(value) => value.toFixed(1)+"°"} onChange={(value) => {setSteeringAxisAngle(value)}}/>
 
             </div>
             <div ref={div} style={{maxWidth: "100%", height: "100%", position: "relative"}}>

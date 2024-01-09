@@ -49,10 +49,11 @@ export default function Home() {
             { location: { lat: 0, long: toRad(0, 0.00053959296 ) }, label: "0m N 1m E" },
           ]}
           />
-
-          <AngleRangeSlider min={0} max={360} infinite={true} value={heading} onChange={(heading) => setHeading(heading)}/>
-          <AngleRangeSlider tickScale={10000000} min={-90} max={90} value={lat} onChange={(lat) => setLat(lat)}/>
-          <AngleRangeSlider tickScale={10000000} min={-180} max={180} value={long} onChange={(long) => setLong(long)}/> 
+      </div>
+      <div style={{width: "300px"}}>
+        <AngleRangeSlider min={0} max={360} infinite={true} value={heading} onChange={(heading) => setHeading(heading)}/>
+        <AngleRangeSlider tickScale={10000000} min={-90} max={90} value={lat} onChange={(lat) => setLat(lat)}/>
+        <AngleRangeSlider tickScale={10000000} min={-180} max={180} value={long} onChange={(long) => setLong(long)}/> 
       </div>
     </main>
   )

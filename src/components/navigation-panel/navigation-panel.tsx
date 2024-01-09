@@ -1,6 +1,6 @@
 "use client"
 
-import { ReactElement } from "react";
+import { ReactElement, useMemo } from "react";
 
 /**
  * This is a navigation display based on the Boeing 737 Navigation display.
@@ -60,29 +60,34 @@ const RAD_TO_DEG = 180 / Math.PI;
 const DEG_TO_RAD = 1 / RAD_TO_DEG;
 
 function TickmarkTrack({ tickSpace, primaryTickPeriod, secondaryTickPeriod } : { tickSpace : number, primaryTickPeriod : number, secondaryTickPeriod : number }) {
-    const tickmarks = [];
-    for(let i = 0; i * tickSpace  < Math.PI * 2; i ++) {
-        let angle = i*tickSpace;
-        if(i % primaryTickPeriod == 0) {
-            tickmarks.push({
-                angle,
-                length: 0.7,
-                hasText: true,
-            });
-        }else if(i % secondaryTickPeriod == 0) {
-            tickmarks.push({
-                angle,
-                length: 0.7,
-                hasText: false,
-            });
-        }else {
-            tickmarks.push({
-                angle,
-                length: 0.35,
-                hasText: false,
-            });
+    const tickmarks = useMemo(() => {
+        const tickmarks = [];
+        
+        for(let i = 0; i * tickSpace  < Math.PI * 2; i ++) {
+            let angle = i*tickSpace;
+            if(i % primaryTickPeriod == 0) {
+                tickmarks.push({
+                    angle,
+                    length: 0.7,
+                    hasText: true,
+                });
+            }else if(i % secondaryTickPeriod == 0) {
+                tickmarks.push({
+                    angle,
+                    length: 0.7,
+                    hasText: false,
+                });
+            }else {
+                tickmarks.push({
+                    angle,
+                    length: 0.35,
+                    hasText: false,
+                });
+            }
         }
-    }
+        
+        return tickmarks;
+    }, [tickSpace, primaryTickPeriod, secondaryTickPeriod]);
 
     return (tickmarks.map((tick, i) => {
         return (<g key={i} transform={`rotate(${tick.angle * RAD_TO_DEG}, 16, 16)`}>
@@ -94,7 +99,6 @@ function TickmarkTrack({ tickSpace, primaryTickPeriod, secondaryTickPeriod } : {
 
 
 function DistanceRings({ viewportSize, ringDist } : { viewportSize : number, ringDist : number }) {
-    
     const rings = [];
     for(let dist = ringDist; dist < viewportSize; dist += ringDist) {
         rings.push({
