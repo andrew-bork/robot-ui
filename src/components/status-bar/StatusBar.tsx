@@ -25,8 +25,8 @@ export default function StatusBar() {
                 <IoFlaskOutline className={styles["view-link"] + " " + (pathname === "/science" ? styles["view-link-active"] : "")}/>
             </Link>
             
-            <Link href="/" prefetch={true}>
-                <GiMechanicalArm className={styles["view-link"] + " " + (pathname === "/" ? styles["view-link-active"] : "")}/>
+            <Link href="/arm" prefetch={true}>
+                <GiMechanicalArm className={styles["view-link"] + " " + (pathname === "/arm" ? styles["view-link-active"] : "")}/>
             </Link>
             <Link href="/navigation" prefetch={true}>
                 <IoMapOutline className={styles["view-link"] + " " + (pathname === "/navigation" ? styles["view-link-active"] : "")}/>

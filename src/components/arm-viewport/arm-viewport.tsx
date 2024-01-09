@@ -1,81 +1,97 @@
+
 "use client"
 import { useEffect, useRef } from "react";
-import { Scene, Camera, PerspectiveCamera, OrthographicCamera, MeshBasicMaterial, WebGLRenderer, Mesh, BoxGeometry, DirectionalLight, AmbientLight, MeshStandardMaterial, DirectionalLightHelper, Object3D, Vector3, GridHelper } from "three";
+import { Scene, PerspectiveCamera, WebGLRenderer, DirectionalLight, Object3D, Vector3, GridHelper } from "three";
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-// ARM IS GOinG TO GET FUNKY
-// THREE JS IS NOT REACTIVE
 
+/**
+ * There is a lot of funky stuff going on here.
+ * The three.js scene is effectively seperate from the react runtime.
+ * The scene attempts to render each frame and 60 fps.
+ * React will update the angles of each arm mesh, but the change
+ * will only be reflected in the next frame.
+ * All information between the scene (which is a react ref) and react
+ * must be manually synchronized together.
+ */
 class ArmViewportScene {
+    // Dimensions of the viewport
     width: number;
     height: number;
 
     scene: Scene;
     camera: PerspectiveCamera;
-    renderer: WebGLRenderer;
-    controls: OrbitControls;
+    renderer: WebGLRenderer; 
 
-    armBase: Object3D;
-    hindArm: Object3D;
-    foreArm: Object3D;
-    foreWrist: Object3D;
-    hindWrist: Object3D;
+    controls: OrbitControls; // The mouse controls
+
+    // Mesh objects
+    armBase: Object3D; // Rotunda
+    hindArm: Object3D; // Shoulder
+    foreArm: Object3D; // Elbow
+    foreWrist: Object3D; // Wrist Pitch
+    hindWrist: Object3D; // Wrist Roll
 
     grid: GridHelper;
 
+    // Lights
     mainLight: DirectionalLight;
-    // ambientLight: AmbientLight;
 
+    // Canvas Element
     canvas: HTMLCanvasElement;
-
-
-
-    // box
     
+    /**
+     * Initializes the scene.
+     * 
+     * @param canvas Canvas to render on
+     */
     constructor(canvas : HTMLCanvasElement) {
         this.canvas = canvas;
         this.width = canvas.width;
         this.height = canvas.height;
 
         this.scene = new Scene();
-        // this.camera = new OrthographicCamera()
-        this.camera = new PerspectiveCamera( 75, this.width / this.height, 0.1, 1000);
+        
         this.renderer = new WebGLRenderer({
             canvas: canvas,
             antialias: true,
         });
-        
-        this.renderer.setSize(this.width, this.height);
-
-        this.camera.position.z = 5;
         this.renderer.setClearAlpha(0.0);
+        this.renderer.setSize(this.width, this.height);
+        
 
-        this.controls = new OrbitControls(this.camera, canvas);
+        this.camera = new PerspectiveCamera( 75, this.width / this.height, 0.1, 1000);
         this.camera.position.set( 2, 2, 2 );
+        this.scene.add(this.camera);
+
+        // Set up mouse controls.
+        this.controls = new OrbitControls(this.camera, canvas);
         this.controls.update();
 
+
+        // White light intensity 5.
         this.mainLight = new DirectionalLight(0xffffff, 5.0);
+        // Make it point in the direction of the camera view.
         this.mainLight.position.set(0, 0, 1);
         this.camera.add(this.mainLight);
 
-        this.scene.add(this.camera);
 
-        // this.ambientLight = new AmbientLight(0xfffffff, 10);
-        // this.scene.add(this.ambientLight);
-
+        // Add a grid
+        this.grid = new GridHelper(10, 10);
+        this.grid.position.set(0, -1, 0);
+        this.scene.add(this.grid);
+        
+        
+        // Load the model
         this.armBase = new Object3D();
         this.hindArm = new Object3D();
         this.foreArm = new Object3D();
         this.foreWrist = new Object3D();
         this.hindWrist = new Object3D();
-
-        this.grid = new GridHelper(10, 10);
-        this.grid.position.set(0, -1, 0);
-        this.scene.add(this.grid);
-
         const loader = new GLTFLoader();
         loader.load("/models/arm.glb", (gltf) => {
             // this.arm = gltf.scene;
+            // Extract the correct parent elements from the mesh.
             this.armBase = gltf.scene.children[0];
 
             this.hindArm = this.armBase.children.find((child) => child.name === "Hind_Arm") ?? this.hindArm;
@@ -83,7 +99,7 @@ class ArmViewportScene {
             this.hindWrist = this.foreArm.children.find((child) => child.name === "Upper_Wrist") ?? this.hindWrist;
             this.foreWrist = this.hindWrist.children.find((child) => child.name === "Lower_Wrist") ?? this.foreWrist;
 
-            console.log(this.armBase, this.hindArm, this.foreArm, this.foreWrist, this.hindWrist);
+            // console.log(this.armBase, this.hindArm, this.foreArm, this.foreWrist, this.hindWrist);
 
             this.armBase.position.set(0,-1,0);
             this.armBase.scale.set(1, 1, 1)
@@ -92,15 +108,26 @@ class ArmViewportScene {
         });
     }
 
+    /**
+     * Update the scene with the new dimensions.
+     * @param width New width of the viewport
+     * @param height New height of the viewport
+     */
     setSize(width : number, height : number) {
+        // Update elements
         this.width = this.canvas.width = width;
         this.height = this.canvas.height = height;
+
+        // Update Renderer
         this.renderer.setSize(width, height);
+
+        // Update camera
         this.camera.aspect = width / height;
         this.camera.updateProjectionMatrix();
     }
 
     /**
+     * Set the arm mesh positions.
      * 
      * @param armBaseAngle Radians
      * @param hindArmAngle Radians
@@ -117,6 +144,9 @@ class ArmViewportScene {
         this.foreWrist.setRotationFromAxisAngle(new Vector3(0, 0, 1), foreWristAngle);
     }
 
+    /**
+     * Render a frame
+     */
     render() {
         this.renderer.render(this.scene, this.camera);
     }
@@ -126,6 +156,11 @@ class ArmViewportScene {
     }
 }
 
+
+/**
+ * Calls a render function at each animation frame.
+ * @param render dt is the difference time since last frame, in seconds.
+ */
 function useRenderLoop(render: (dt : number) => void) {
     useEffect(() => {
         let frame = 0;
@@ -148,11 +183,11 @@ function useRenderLoop(render: (dt : number) => void) {
 
 
 interface ArmViewportArgs {
-    armBaseAngle : number;
-    foreArmAngle : number;
-    hindArmAngle : number;
-    foreWristAngle : number;
-    hindWristAngle : number;
+    armBaseAngle : number; // Rotunda
+    foreArmAngle : number; // Shoulder
+    hindArmAngle : number; // Elbow
+    foreWristAngle : number; // Wrist Pitch
+    hindWristAngle : number; // Wrist Roll
 };
 
 export function ArmViewport({ armBaseAngle, hindArmAngle, foreArmAngle, hindWristAngle, foreWristAngle } : ArmViewportArgs) {
@@ -162,29 +197,22 @@ export function ArmViewport({ armBaseAngle, hindArmAngle, foreArmAngle, hindWris
 
     useEffect(() => {
         if(canvasRef.current != null && divRef.current != null) {
+            // Initialize the scene.
             scene.current = new ArmViewportScene(canvasRef.current);
 
+            // This will update the canvas and scene whenever it is resized.
             new ResizeObserver(() => {
                 if(divRef.current != null && scene.current != null) {
                     scene.current.setSize(divRef.current.clientWidth, divRef.current.clientHeight);
                 }
             }).observe(divRef.current);
-        
         }
     }, []);
 
-    const render = useRef((dt:number) => {});
-
-    render.current = (dt:number) => {
+    useRenderLoop((dt) => {
         if(scene.current) {
-            // console.log(dt);
-            // scene.current.camera.rotateZ(dt);
             scene.current.render();
         }
-    };
-
-    useRenderLoop((dt) => {
-        render.current(dt); 
     });
 
 
