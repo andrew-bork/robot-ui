@@ -1,4 +1,5 @@
-import { ReactElement, createContext, useContext } from "react";
+"use client"
+import { ReactElement, createContext, useCallback, useContext, useRef, useState } from "react";
 
 
 
@@ -36,6 +37,10 @@ interface Waypoint {
     color?: string,
 };
 
+
+interface RobotSettings {
+
+};
 
 
 interface RobotTelemetryData {
@@ -80,37 +85,158 @@ interface RobotTelemetryData {
     },
 };
 
+type ConnectionStatus = Response;
 type CommandStatus = Response;
 
 interface Robot {
     robot: RobotTelemetryData,
-    sendCommand: Promise<CommandStatus>,
+    settings: RobotSettings,
+    // connect: () => Promise<ConnectionStatus>,
+    startPolling: () => void,
+    stopPolling: () => void,
+    sendCommand: () => Promise<CommandStatus>,
+    setSettings: (newSettings : RobotSettings) => void,
+};
+
+
+const defaultRobotState : RobotTelemetryData = {
+    drive: {
+        setpoints: {
+            steering_axis_angle: NaN,
+            steering_angle: NaN,
+            wheel_speed: NaN,
+        },
+        steering_axis_angle: NaN,
+        steering_angle: NaN,
+        wheel_speed: NaN,
+    },
+    navigation: {
+        air_pressure: NaN,
+        altitude: NaN,
+        
+        gps_location: { lat: NaN, long: NaN },
+        heading: NaN,
+
+        velocity: { x: NaN, y: NaN, z: NaN },
+        acceleration: { x: NaN, y: NaN, z: NaN },
+
+        orientation: { w: NaN, x: NaN, y: NaN, z: NaN },
+        angular_velocity: { w: NaN, x: NaN, y: NaN, z: NaN },
+    },
+    automony: {
+        lidar: [],
+        waypoints: [],
+    },
+    science: {
+        co2_value: NaN,
+        humidity: NaN,
+        air_pressure: NaN,
+
+    },
+    system: {
+        ping: NaN,
+        battery: NaN,
+        state: "Unconnected",
+    },
 }
 
+const defaultRobotSettings : RobotSettings = {
 
-function sendCommand?() {}
+};
 
-const RobotContext = useContext<Robot>();
+
+const RobotContext = createContext<Robot>({
+    robot: defaultRobotState,
+    // settings: 
+    settings: {},
+    sendCommand: () => {
+        console.error("Send Command not implemented.");
+
+        return fetch("");
+    },
+    // connect: () => {
+    //     console.error("connect not implemented.");
+
+    //     return fetch("");
+    // },
+    startPolling: () => {
+        console.error("startPolling not implemented.");
+    },
+    stopPolling: () => {
+        console.error("stopPolling not implemented.");
+    },
+    setSettings: (_) => {
+        console.error("setSettings not implemented.");
+    }
+});
+
+export function useRobotSettings() {
+    const { settings }  = useContext(RobotContext);
+    return settings;
+}
+
+export function useRobotState() {
+    const { robot } = useContext(RobotContext);
+    return robot;
+}
 
 export function useRobot() {
-    const {}  = 
+    return useContext(RobotContext);
 }
 
 export function useDriveData() {
-    
+    const { robot } = useContext(RobotContext);
+    return robot.drive;
 }
 
 export function useNavigationData() {
-
+    const { robot } = useContext(RobotContext);
+    return robot.navigation;
 }
 
-// export function use
+export function RobotContextProvider({ children } : { children : React.ReactNode }) {
+    const [ robotState, setRobotState ] = useState<RobotTelemetryData>(defaultRobotState);
+    const [ settings, setRobotSettings ] = useState<RobotSettings>(defaultRobotSettings);
 
-// export const RobotContext = createContext();
+    const interval = useRef<NodeJS.Timeout|null>(null);
 
-export function RobotContextProvider({ children } : { children : ReactElement[] }) {
+    const settingsRef = useRef<RobotSettings>(settings);
+    settingsRef.current = settings;
 
 
 
-    return children;
+    const startPolling = useCallback(() => {
+        const pollingInterval = 1000;
+        if(interval.current == null) {
+            interval.current = setInterval(() => {
+    
+            }, pollingInterval);
+        }else {
+            console.error("Tried to startPolling when already polling.");
+        }
+    }, []);
+
+    const stopPolling = useCallback(() => {
+        if(interval.current != null) {
+            clearInterval(interval.current);
+        }else {
+            console.error("Tried to stopPolling when we werent polling.");
+        }
+    }, []);
+    const sendCommand = useCallback(() => {
+
+        return fetch("");
+    }, []);
+
+    return <RobotContext.Provider value={{
+        robot: robotState,
+        settings,
+
+        startPolling,
+        stopPolling,
+        sendCommand,
+        setSettings: setRobotSettings,
+    }}>
+        {children}
+    </RobotContext.Provider>
 }

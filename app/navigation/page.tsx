@@ -7,6 +7,7 @@ import { LayersControl, MapContainer, SVGOverlay, TileLayer, useMap, useMapEvent
 import Head from "next/head";
 import Script from "next/script";
 import { useEffect, useRef, useState } from "react";
+import { IoAdd } from "react-icons/io5";
 // import { useEffect, useRef } from "react";
 
 
@@ -53,6 +54,32 @@ function WaypointLayer() {
 
 
 
+function WaypointList() {
+
+
+
+    return <div className={styles["drive-control-panel"]}>
+        <h2 style={{ marginBottom: "8px" }}>Waypoints</h2>
+        <hr/>
+        <ul className={styles["waypoint-list"]}>
+            <li>
+                <h4>School</h4>
+                <input defaultValue={37.337367}/>°N
+                <input defaultValue={-121.88267}/>°E
+            </li>
+            <li>
+                <h4>Not School</h4>
+                <input defaultValue={39.337367}/>°N
+                <input defaultValue={-124.88267}/>°E
+            </li>
+            <li style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <div className={styles["add-waypoint-button"]}>
+                    <IoAdd/>
+                </div>
+            </li>
+        </ul>
+    </div>;
+}
 
 
 
@@ -72,9 +99,7 @@ export default function Navigation() {
                 integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BM    Y="
                 />
             </Head>
-            <div className={styles["drive-control-panel"]}>
-                <h2>Waypoints</h2>
-            </div>
+            <WaypointList/>
             <div className={styles["fullscreen-map"]}>
             <MapContainer center={robotLocation} zoom={13}>
                 <LayersControl position="topright">
