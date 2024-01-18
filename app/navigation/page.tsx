@@ -3,7 +3,7 @@
 import "leaflet/dist/leaflet.css";
 import { LatLng, Map, Point } from "leaflet";
 import styles from "./page.module.css";
-import { LayersControl, MapContainer, SVGOverlay, TileLayer, useMap, useMapEvent } from 'react-leaflet'
+import { LayersControl, MapContainer, Marker, SVGOverlay, TileLayer, useMap, useMapEvent } from 'react-leaflet'
 import Head from "next/head";
 import Script from "next/script";
 import { useEffect, useRef, useState } from "react";
@@ -72,12 +72,12 @@ function WaypointList() {
                 <input defaultValue={39.337367}/>°N
                 <input defaultValue={-124.88267}/>°E
             </li>
-            <li style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <div className={styles["add-waypoint-button"]}>
-                    <IoAdd/>
-                </div>
-            </li>
         </ul>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div className={styles["add-waypoint-button"]}>
+                <IoAdd/>
+            </div>
+        </div>
     </div>;
 }
 
@@ -103,7 +103,7 @@ export default function Navigation() {
             <div className={styles["fullscreen-map"]}>
             <MapContainer center={robotLocation} zoom={13}>
                 <LayersControl position="topright">
-                    <LayersControl.Overlay name="Open Street Map">
+                    <LayersControl.Overlay name="Open Street Map" checked>
                         <TileLayer
                         attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"/>
