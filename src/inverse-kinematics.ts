@@ -1,38 +1,18 @@
-import { Quaternion, QuaternionO, Solve3D, V3 } from "inverse-kinematics";
 import { Vector3 } from "three";
-import { ArmState } from "./components/arm-viewport/arm-viewport";
+import { ArmState, EffectorState } from "./components/arm-viewport/arm-viewport";
+import { clampedAngularLerp, clampedLerp, lawOfCosinesAngle, lawOfCosinesSide } from "./math";
 
 
 const DEG_TO_RAD = Math.PI / 180;
 
-function    clampedLerp(a:number, b:number, t:number, maxDiff:number) {
-    t = Math.max(0, Math.min(1, t));
-
-    const change = Math.max(Math.min((b - a) * t, maxDiff), -maxDiff);
-    return a + change;
-}
-
-function clampedAngularLerp(a:number, b:number, t:number, maxDiff:number) {
-    t = Math.max(0, Math.min(1, t));
-
-    let difference = b - a
-    if(difference > Math.PI) {
-        difference -= Math.PI * 2;
-    }else if(difference < -Math.PI) {
-        difference += Math.PI * 2;
-    }
-
-    const change = Math.max(Math.min(difference * t, maxDiff), -maxDiff);
-    return a + change;
-}
-
-function lawOfCosinesAngle(a:number, b:number, c:number):number {
-    return Math.acos((a * a - b * b - c * c) / (-2 * b * c));
-}
-
 interface ArmInverseKinematicsSolverSettings {
     lerpAmount: number;
     maximumAngularSpeed: number;
+
+    shoulderAbsolutePosition: Vector3;
+    shoulderLength: number;
+    elbowLength: number;
+    wristLength: number;
     
     constraints: {
         rotunda? : Constraint; // Rotunda
@@ -48,6 +28,11 @@ interface ArmInverseKinematicsSolverSettingsArgs {
     lerpAmount?: number;
     maximumAngularSpeed?: number;
     
+    shoulderAbsolutePosition?: Vector3;
+    shoulderLength?: number;
+    elbowLength?: number;
+    wristLength?: number;
+
     constraints?: {
         rotunda? : Constraint; // Rotunda
         shoulder? : Constraint; // Shoulder
@@ -64,6 +49,7 @@ interface Constraint {
 }
 
 
+
 function satisfyConstraint(angle: number, constraint?:Constraint) {
     if(constraint == null) return true; // No constraint.
     return constraint.min <= angle && angle <= constraint.max;
@@ -78,10 +64,10 @@ function checkNewTarget(newTarget:number, defaultValue: number, constraint?: Con
 export class ArmInverseKinematicsSolver {
     // linkages: Solve3D.Link[];
     // base: Solve3D.JointTransform;
-    hindArmAbsolutePosition: Vector3;
-    hindArmLength: number;
-    foreArmLength: number;
-    hindWristLength: number;
+    // hindArmAbsolutePosition: Vector3;
+    // hindArmLength: number;
+    // foreArmLength: number;
+    // hindWristLength: number;
     currentAngles: ArmState;
     homeAngles: ArmState;
     targetAngles: ArmState;
@@ -94,13 +80,17 @@ export class ArmInverseKinematicsSolver {
         //     rotation: QuaternionO.zeroRotation(),
         // };
 
-        this.hindArmAbsolutePosition = new Vector3(0, 0.261, 0.287).add(new Vector3(0, -1, 0));
-        this.hindArmLength = 1.546;
-        this.foreArmLength = 1.546;
-        this.hindWristLength = 0.6;
+        // this.hindArmAbsolutePosition = new Vector3(0, 0.261, 0.287);
+        // this.hindArmLength = 1.546;
+        // this.foreArmLength = 1.546;
+        // this.hindWristLength = 0.6;
 
         if(settings) {
             this.settings = {
+                shoulderAbsolutePosition: settings.shoulderAbsolutePosition ?? new Vector3(0, 0.261, 0.287),
+                shoulderLength: settings.shoulderLength ?? 1.546,
+                elbowLength: settings.elbowLength ?? 1.546,
+                wristLength: settings.wristLength ?? 0.6,
                 lerpAmount: settings.lerpAmount ?? 10.0,
                 maximumAngularSpeed: settings.maximumAngularSpeed ?? 15 * DEG_TO_RAD,
                 constraints: settings.constraints ?? {
@@ -111,6 +101,10 @@ export class ArmInverseKinematicsSolver {
             };
         }else {
             this.settings =  {
+                shoulderAbsolutePosition: new Vector3(0, 0.261, 0.287),
+                shoulderLength: 1.546,
+                elbowLength: 1.546,
+                wristLength: 0.6,
                 lerpAmount: 10.0,
                 maximumAngularSpeed: 60 * DEG_TO_RAD,
                 constraints: {
@@ -160,13 +154,13 @@ export class ArmInverseKinematicsSolver {
         // then you law of cosines your way out.
         
         const r = Math.sqrt(target.x * target.x + target.z * target.z);
-        const elevation = target.y - this.hindArmAbsolutePosition.y - this.hindWristLength * Math.sin(effectorPitch);
-        const k = r - this.hindArmAbsolutePosition.z - this.hindWristLength * Math.cos(effectorPitch);
+        const elevation = target.y - this.settings.shoulderAbsolutePosition.y - this.settings.wristLength * Math.sin(effectorPitch);
+        const k = r - this.settings.shoulderAbsolutePosition.z - this.settings.wristLength * Math.cos(effectorPitch);
         const c = Math.sqrt(k * k + elevation * elevation);
 
         const rotunda= Math.atan2(target.x, target.z);
-        const shoulder = Math.PI/2 - (lawOfCosinesAngle(this.foreArmLength, c, this.hindArmLength) + Math.asin(elevation / c));
-        const elbow = Math.PI/2 - lawOfCosinesAngle(c, this.hindArmLength, this.foreArmLength);
+        const shoulder = Math.PI/2 - (lawOfCosinesAngle(this.settings.elbowLength, c, this.settings.shoulderLength) + Math.asin(elevation / c));
+        const elbow = Math.PI/2 - lawOfCosinesAngle(c, this.settings.shoulderLength, this.settings.elbowLength);
         const wristRoll = effectorRoll;
         
 
@@ -186,7 +180,7 @@ export class ArmInverseKinematicsSolver {
             rotunda: clampedAngularLerp(this.currentAngles.rotunda, this.targetAngles.rotunda, lerpAmount, maxDiff),
             shoulder: clampedLerp(this.currentAngles.shoulder, this.targetAngles.shoulder, lerpAmount, maxDiff),
             elbow: clampedLerp(this.currentAngles.elbow, this.targetAngles.elbow, lerpAmount, maxDiff),
-            wristPitch: clampedLerp(this.currentAngles.wristPitch, this.targetAngles.wristPitch, 1, maxDiff),
+            wristPitch: clampedLerp(this.currentAngles.wristPitch, this.targetAngles.wristPitch, 1, 2 * maxDiff),
             wristRoll: clampedAngularLerp(this.currentAngles.wristRoll, this.targetAngles.wristRoll, lerpAmount, maxDiff),
             effectorPosition: effectorPosition,
         }
@@ -195,26 +189,21 @@ export class ArmInverseKinematicsSolver {
     }
 }
 
-
-function lawOfCosinesSide(theta:number, b:number, c:number):number {
-    return Math.sqrt(b * b + c * c - 2 * b * c * Math.cos(theta));
-}
-
-export function createFourbarLinkageSolver(a : number, b : number, c : number, d : number, diagonal: number) {
-    const initialAngles = [
-        lawOfCosinesAngle(diagonal, a, d),
-        lawOfCosinesAngle(c, diagonal, b) + lawOfCosinesAngle(d, diagonal, a),
-        lawOfCosinesAngle(diagonal, c, b),
-        lawOfCosinesAngle(b, diagonal, c) + lawOfCosinesAngle(a, diagonal, d),
-    ];
+export function createFourbarLinkageSolver(a : number, b : number, c : number, d : number) {
+    // const initialAngles = [
+    //     lawOfCosinesAngle(diagonal, a, d),
+    //     lawOfCosinesAngle(c, diagonal, b) + lawOfCosinesAngle(d, diagonal, a),
+    //     lawOfCosinesAngle(diagonal, c, b),
+    //     lawOfCosinesAngle(b, diagonal, c) + lawOfCosinesAngle(a, diagonal, d),
+    // ];
 
     return (theta : number) => {
-        const x = lawOfCosinesSide(theta + initialAngles[0], a, d);
+        const x = lawOfCosinesSide(theta, a, d);
         return [
             theta,
-            lawOfCosinesAngle(c, x, b) + lawOfCosinesAngle(d, x, a) - initialAngles[1],
-            lawOfCosinesAngle(x, c, b) - initialAngles[2],
-            lawOfCosinesAngle(b, x, c) + lawOfCosinesAngle(a, x, d) - initialAngles[3],
+            lawOfCosinesAngle(c, x, b) + lawOfCosinesAngle(d, x, a) ,
+            lawOfCosinesAngle(x, c, b),
+            lawOfCosinesAngle(b, x, c) + lawOfCosinesAngle(a, x, d),
         ];
         // const x = lawOfCosinesSide(theta, a, d);
         // return [

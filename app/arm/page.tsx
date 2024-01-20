@@ -26,15 +26,15 @@ export default function Arm() {
       <div className={styles["drive-control-panel"]}>
         <h1>Arm</h1>
         <h4 style={{marginTop: "24px"}}>Rotunda</h4>
-        <AngleRangeSlider infinite={true} value={angles.rotunda * RAD_TO_DEG} onChange={()=>{}}/>
+        {/* <AngleRangeSlider infinite={true} value={angles.rotunda * RAD_TO_DEG} onChange={()=>{}}/> */}
         <h4 style={{marginTop: "24px"}}>Shoulder</h4>
-        <AngleRangeSlider min={-30} max={90} value={angles.elbow * RAD_TO_DEG} onChange={()=>{}}/>
+        {/* <AngleRangeSlider min={-30} max={90} value={angles.elbow * RAD_TO_DEG} onChange={()=>{}}/> */}
         <h4 style={{marginTop: "24px"}}>Elbow</h4>
-        <AngleRangeSlider min={-30} max={60} value={angles.shoulder * RAD_TO_DEG} onChange={()=>{}}/>
+        {/* <AngleRangeSlider min={-30} max={60} value={angles.shoulder * RAD_TO_DEG} onChange={()=>{}}/> */}
         <h4 style={{marginTop: "24px"}}>Wrist Pitch</h4>
-        <AngleRangeSlider min={-90} max={90} value={angles.wristRoll * RAD_TO_DEG} onChange={()=>{}}/>
+        {/* <AngleRangeSlider min={-90} max={90} value={angles.wristPitch * RAD_TO_DEG} onChange={()=>{}}/> */}
         <h4 style={{marginTop: "24px"}}>Effector Position</h4>
-        <AngleRangeSlider min={-24} max={16} tickAmount={1} tickScale={5} value={effectorState.position * RAD_TO_DEG} onChange={(a) => { setEffectorState({...effectorState, position: a * DEG_TO_RAD}); }}/>
+        <AngleRangeSlider min={-24} max={90} tickAmount={1} tickScale={5} value={effectorState.position * RAD_TO_DEG} onChange={(a) => { setEffectorState({...effectorState, position: a * DEG_TO_RAD}); }}/>
         <h4 style={{marginTop: "24px"}}>Effector Pitch</h4>
         <AngleRangeSlider min={-90} max={90} value={effectorState.pitch  *RAD_TO_DEG} onChange={(a) => { setEffectorState({...effectorState, pitch: a * DEG_TO_RAD}); }}/>
         <h4 style={{marginTop: "24px"}}>Effector Roll</h4>
