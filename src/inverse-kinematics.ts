@@ -1,6 +1,6 @@
 import { Vector3 } from "three";
-import { ArmState, EffectorState } from "./components/arm-viewport/arm-viewport";
 import { clampedAngularLerp, clampedLerp, lawOfCosinesAngle, lawOfCosinesSide } from "./math";
+import { ArmState } from "./robot-types";
 
 
 const DEG_TO_RAD = Math.PI / 180;
@@ -48,8 +48,6 @@ interface Constraint {
     min: number;
 }
 
-
-
 function satisfyConstraint(angle: number, constraint?:Constraint) {
     if(constraint == null) return true; // No constraint.
     return constraint.min <= angle && angle <= constraint.max;
@@ -62,12 +60,6 @@ function checkNewTarget(newTarget:number, defaultValue: number, constraint?: Con
 }
 
 export class ArmInverseKinematicsSolver {
-    // linkages: Solve3D.Link[];
-    // base: Solve3D.JointTransform;
-    // hindArmAbsolutePosition: Vector3;
-    // hindArmLength: number;
-    // foreArmLength: number;
-    // hindWristLength: number;
     currentAngles: ArmState;
     homeAngles: ArmState;
     targetAngles: ArmState;
@@ -75,15 +67,6 @@ export class ArmInverseKinematicsSolver {
 
     settings: ArmInverseKinematicsSolverSettings;
     constructor(settings? : ArmInverseKinematicsSolverSettingsArgs ) {
-        // this.base = {
-        //     position: [0, -1, 0],
-        //     rotation: QuaternionO.zeroRotation(),
-        // };
-
-        // this.hindArmAbsolutePosition = new Vector3(0, 0.261, 0.287);
-        // this.hindArmLength = 1.546;
-        // this.foreArmLength = 1.546;
-        // this.hindWristLength = 0.6;
 
         if(settings) {
             this.settings = {
@@ -190,13 +173,6 @@ export class ArmInverseKinematicsSolver {
 }
 
 export function createFourbarLinkageSolver(a : number, b : number, c : number, d : number) {
-    // const initialAngles = [
-    //     lawOfCosinesAngle(diagonal, a, d),
-    //     lawOfCosinesAngle(c, diagonal, b) + lawOfCosinesAngle(d, diagonal, a),
-    //     lawOfCosinesAngle(diagonal, c, b),
-    //     lawOfCosinesAngle(b, diagonal, c) + lawOfCosinesAngle(a, diagonal, d),
-    // ];
-
     return (theta : number) => {
         const x = lawOfCosinesSide(theta, a, d);
         return [
@@ -205,12 +181,5 @@ export function createFourbarLinkageSolver(a : number, b : number, c : number, d
             lawOfCosinesAngle(x, c, b),
             lawOfCosinesAngle(b, x, c) + lawOfCosinesAngle(a, x, d),
         ];
-        // const x = lawOfCosinesSide(theta, a, d);
-        // return [
-        //     theta,
-        //     lawOfCosinesAngle(c, x, b) + lawOfCosinesAngle(d, x, a),
-        //     lawOfCosinesAngle(x, c, b),
-        //     lawOfCosinesAngle(b, x, c) + lawOfCosinesAngle(a, x, d),
-        // ];
     }
 }

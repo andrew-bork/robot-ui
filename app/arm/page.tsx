@@ -1,9 +1,10 @@
 "use client"
 import Image from 'next/image'
 import styles from './page.module.css'
-import { ArmState, ArmPlayground, ArmViewport, EffectorState } from '@/components/arm-viewport/arm-viewport'
+import { ArmPlayground, ArmViewport } from '@/components/arm-viewport/arm-viewport'
 import { AngleRangeSlider } from '@/components/custom-range-slider/CustomRangeSlider'
 import { useState } from 'react'
+import { ArmState, EffectorState } from '@/robot-types'
 
 const RAD_TO_DEG = 180 / Math.PI;
 const DEG_TO_RAD = 1 / RAD_TO_DEG;
