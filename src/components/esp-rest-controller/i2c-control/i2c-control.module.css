@@ -1,0 +1,50 @@
+
+
+
+.input-table th {
+    text-align: right;
+    padding: 16px;
+}
+
+
+.button {
+    padding: 12px;
+    background: none;
+    outline: none;
+    border: 1px solid #ffffff31;
+    border-radius: 8px;
+    margin: 12px;
+    margin-left: 48px;
+
+    transition: .1s background-color, .1s border, .3s opacity;
+}
+
+.button:hover :not(:disabled) {
+    background-color: #0000003e;
+    border: 1px solid #ffffff69;
+}
+
+.button:disabled {
+    opacity: 0.5;
+}
+
+.i2c-probe-table {
+    font-family: monospace;
+    border: 1px solid #ffffff6d;
+    border-collapse: collapse;
+}
+.i2c-probe-table th {
+    border: 1px solid #ffffff6d;
+    padding: 3px 8px;
+}
+
+.i2c-probe-table td {
+    text-align: center;
+    border: 1px solid #ffffff6d;
+    border-collapse: collapse;
+    padding: 3px 8px;
+}
+
+.ghost-byte {
+    opacity: 0.5;
+}

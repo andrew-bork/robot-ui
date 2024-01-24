@@ -1,0 +1,20 @@
+
+
+.frame-view {
+    font-family: monospace;
+    border: 1px solid #ffffff6d;
+    border-collapse: collapse;
+    font-size: 12px;
+
+}
+.frame-view th {
+    border: 1px solid #ffffff6d;
+    padding: 3px 8px;
+}
+
+.frame-view td {
+    text-align: center;
+    border: 1px solid #ffffff6d;
+    border-collapse: collapse;
+    padding: 3px 2px;
+}

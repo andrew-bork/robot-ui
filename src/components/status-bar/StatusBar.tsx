@@ -2,7 +2,7 @@
 import styles from "./StatusBar.module.css";
 
 import { TbSteeringWheel } from "react-icons/tb";
-import { IoFlaskOutline, IoSettingsOutline, IoPulse, IoHardwareChipOutline, IoMapOutline } from "react-icons/io5";
+import { IoFlaskOutline, IoSettingsOutline, IoPulse, IoHardwareChipOutline, IoMapOutline, IoTerminalOutline, IoCubeOutline } from "react-icons/io5";
 import { GiMechanicalArm } from "react-icons/gi";
 
 
@@ -39,6 +39,12 @@ export default function StatusBar() {
             </Link>
             <Link href="/settings" prefetch={true}>
                 <IoSettingsOutline className={styles["view-link"] + " " + (pathname === "/settings" ? styles["view-link-active"] : "")}/>
+            </Link>
+            <Link href="/debug" prefetch={true}>
+                <IoTerminalOutline className={styles["view-link"] + " " + (pathname === "/debug" ? styles["view-link-active"] : "")}/>
+            </Link>
+            <Link href="/robot-view" prefetch={true}>
+                <IoCubeOutline className={styles["view-link"] + " " + (pathname === "/robot-view" ? styles["view-link-active"] : "")}/>
             </Link>
         </div>
 
