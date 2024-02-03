@@ -11,6 +11,9 @@ import { useArm } from "@/models/arm";
 import { FollowingLight, Loader, SelectableBackground } from "@/three-util";
 
 
+const RAD_TO_DEG = 180 / Math.PI;
+const DEG_TO_RAD = 1 / RAD_TO_DEG;
+
 export function ArmModel(armState : ArmState) {
     const origin = useMemo(() => new Object3D(), []);
     const [ arm ] = useArm(origin, armState);
@@ -32,6 +35,21 @@ export function ArmViewport(args : ArmState) {
     </Canvas>
 }
 
+interface ArmCommandDTO {
+    heartbeat_count: number;
+    is_operational: number;
+    speed: number;
+    rotunda_angle: number;
+    shoulder_angle: number;
+    elbow_angle: number;
+    wrist_pitch_angle: number;
+    wrist_roll_angle: number;
+    end_effector_angle: number;
+}
+
+export function armStringFormat(commands: ArmCommandDTO): string {
+    return `{"heartbeat_count":${commands.heartbeat_count},"is_operational":${commands.is_operational},"speed":${commands.speed},"angles":[${commands.rotunda_angle},${commands.shoulder_angle},${commands.elbow_angle},${commands.wrist_pitch_angle},${commands.wrist_roll_angle},${commands.end_effector_angle}]}`;
+};
 
 
 
@@ -45,6 +63,50 @@ function ArmInverseKinematicsController({ setAngles, effectorState } : { setAngl
         maximumAngularSpeed: 2 * Math.PI,
     }));
     const targetRef = useRef(new Object3D());
+    const anglesRef = useRef<ArmState>({
+        effectorPosition: 0,
+        elbow: 0,
+        rotunda: 0,
+        shoulder: 0,
+        wristPitch: 0,
+        wristRoll: 0,
+    });
+
+    useEffect(() => {
+        let request : Promise<any> | null = null;
+        const interval = setInterval(() => {
+            // console.log(anglesRef.current);
+            if(request == null) {
+                request = fetch("http://192.168.0.211:5000/arm", {
+                    method: "post",
+                    body: armStringFormat({
+                        elbow_angle: Math.floor(anglesRef.current.elbow * RAD_TO_DEG),
+                        heartbeat_count: 0,
+                        is_operational: 1,
+                        rotunda_angle: Math.floor(anglesRef.current.rotunda * RAD_TO_DEG),
+                        shoulder_angle: Math.floor(anglesRef.current.shoulder * RAD_TO_DEG),
+                        end_effector_angle: Math.floor(anglesRef.current.effectorPosition * RAD_TO_DEG),
+                        speed: 1,
+                        wrist_pitch_angle: Math.floor(anglesRef.current.wristPitch * RAD_TO_DEG),
+                        wrist_roll_angle: Math.floor(anglesRef.current.wristRoll * RAD_TO_DEG),
+                    }),
+                    headers: {
+                        "Content-Type": "application/json"
+                    }
+                }).then((e) => {
+                    console.log("Request Success!");
+                }).catch((e) => {
+                    console.log("Request Failed!");
+                }).finally(() => {
+                    request = null;
+                });
+            }
+        }, 10);
+
+        return () => {
+            clearInterval(interval);
+        }
+    }, []);
 
     useEffect(() => {
         targetRef.current.position.set(0,0.5, 0.5);
@@ -52,6 +114,7 @@ function ArmInverseKinematicsController({ setAngles, effectorState } : { setAngl
 
     useFrame((state, dt) => {
         const angles = armInverseKinematicsSolverRef.current.solve(targetRef.current.position.clone(), effectorState.pitch, effectorState.roll, effectorState.position, dt);
+        anglesRef.current = angles;
         setAngles(angles);
     });
 
