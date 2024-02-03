@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import styles from './page.module.css'
 import { NavigationPanel } from '@/components/navigation-panel/navigation-panel'
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AngleRangeSlider, CustomRangeSlider } from '@/components/custom-range-slider/CustomRangeSlider';
 
 
@@ -14,6 +14,9 @@ const DEG_TO_RAD = 1 / RAD_TO_DEG;
 function toRad(degrees : number, minutes : number = 0, seconds : number = 0) {
   return (degrees + minutes / 60 + seconds / 3600) * DEG_TO_RAD;
 }
+
+
+
 
 export default function Home() {
   const [ heading, setHeading ] = useState(0);
@@ -33,7 +36,20 @@ export default function Home() {
   // }, []);
 
 
+  const lidar = useMemo(() => {
+    const points = [];
+    for(let i = 0; i < 360; i += 5) {
+      const theta = i * DEG_TO_RAD;
+      const r = 3 * Math.sin(theta) + 5;
+      points.push({
+        theta,
+        r
+      });
+    }
+    return points
+  }, []);
   
+
   return (
     <main className={styles.main}>
       <div style={{width: "600px", height: "600px"}}>
@@ -48,6 +64,8 @@ export default function Home() {
             // { location: { lat: 0, long: 1 } },
             { location: { lat: 0, long: toRad(0, 0.00053959296 ) }, label: "0m N 1m E" },
           ]}
+          lidar={lidar}
+          
           />
       </div>
       <div style={{width: "300px"}}>

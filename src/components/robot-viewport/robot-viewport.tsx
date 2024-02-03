@@ -1,10 +1,10 @@
 import { useArm } from "@/models/arm";
 import { useChassi, useSuspension, useWheel } from "@/models/robot";
 import { FollowingLight, Loader, SelectableBackground } from "@/three-util";
-import { Environment, Html, OrbitControls, useProgress } from "@react-three/drei";
+import { Environment, Html, OrbitControls, TransformControls, useProgress } from "@react-three/drei";
 import { Canvas, useLoader, useThree } from "@react-three/fiber";
 import { useControls } from "leva";
-import { Suspense, useEffect, useMemo, useRef } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { AxesHelper, ColorRepresentation, DirectionalLight, Object3D, Vector3, Vector3Tuple } from "three";
 
 
@@ -97,6 +97,27 @@ export function RobotModel() {
     return <primitive object={chassi}/>
 }
 
+
+function DraggableBox() {
+    const [ targeted, setTargeted ] = useState<Object3D|null>(null);
+
+    // const [ object ]
+
+    return <>
+        <mesh 
+            onClick={(e) => setTargeted(e.object)} 
+            onPointerMissed={() => setTargeted(null)}
+            // onPointerOver={() => setHovered(true)} 
+            // onPointerOut={() => setHovered(false)}
+            scale={[0.03,0.03,0.03]}
+        >
+        <boxGeometry/>
+        <meshNormalMaterial/>
+        </mesh>
+        {targeted ? <TransformControls object={targeted}/> : <></>}
+    </>
+}
+
 export function DrivePlayground() {
 
     return <Canvas
@@ -110,6 +131,7 @@ export function DrivePlayground() {
             <OrbitControls makeDefault/>
             <RobotModel/>
             <gridHelper/>
+            <DraggableBox/>
         </Suspense>
 </Canvas>
 }

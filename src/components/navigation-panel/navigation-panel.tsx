@@ -121,6 +121,10 @@ function WaypointMarker() {
     return (<path d="M 0 -0.5 l 0.5 0.5 l -0.5 0.5 l -0.5 -0.5 z" strokeWidth={2} vectorEffect="non-scaling-stroke"/>)
 }
 
+function LidarMarker() {
+    return (<path d="M 0 -0.1 L 0.087 0.05 L -0.087 0.05 z" strokeWidth={1} vectorEffect="non-scaling-stroke" shapeRendering="optimizeSpeed"/>)
+}
+
 
 
 function hav(t : number) : number {
@@ -178,8 +182,6 @@ const SphericalNavigation = {
 export function NavigationPanel(args : NavigationPanelArgs) {
 
     const heading = args.heading;
-    const location = args.location;
-
 
 
 
@@ -193,6 +195,20 @@ export function NavigationPanel(args : NavigationPanelArgs) {
 
         <DistanceRings viewportSize={args.viewportSize} ringDist={1}/>
 
+        <g clipPath="url(#nav-track-clip)">
+            {args.lidar != null ? 
+                <g stroke="#aa3322">
+                    {
+                        args.lidar.map((point, i) => {
+                            return <g key={i} transform={`rotate(${point.theta * RAD_TO_DEG}, 16, 16) translate(16 ${16 - 12 * point.r / args.viewportSize}) rotate(${(-point.theta) * RAD_TO_DEG})`} >
+                                <LidarMarker/>
+                            </g>
+                        })
+                    }
+                </g>
+            : <></>}
+        </g>
+        
         <g transform={`rotate(${-heading * RAD_TO_DEG}, 16, 16)`}>
             <TickmarkTrack tickSpace={5 * DEG_TO_RAD} primaryTickPeriod={6} secondaryTickPeriod={2}/>
 
@@ -208,15 +224,13 @@ export function NavigationPanel(args : NavigationPanelArgs) {
                         const bearing = SphericalNavigation.getForwardAzimuthBetween(args.location, waypoint.location);
                         const distance = SphericalNavigation.getDistanceBetween(args.location, waypoint.location);
 
-
-                        // console.log(distance)
-
                         return (<g key={i} transform={`rotate(${bearing * RAD_TO_DEG}, 16, 16) translate(16 ${16 - 12 * distance / args.viewportSize}) rotate(${(heading - bearing) * RAD_TO_DEG})`}>
                             <WaypointMarker/>
                             {(waypoint.label != null ? <text x={0.7} y={0.7} fontSize={0.6} stroke="none" fill="#ffffff">{waypoint.label}</text> : <></>)}
                         </g>)
                     }) 
                 : <></>}
+                
             </g>
         </g>
         
