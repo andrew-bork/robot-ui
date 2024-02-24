@@ -4,6 +4,7 @@ import styles from './page.module.css'
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
 import { Vector, Vector2D } from '@/vector'
 import { AngleRangeSlider, CustomRangeSlider } from '@/components/custom-range-slider/CustomRangeSlider'
+import { useChangeSubsystemController, useDriveController, useGamepadConnect } from '@/components/gamepad-context/gamepad-context'
 
 
 interface Size {
@@ -11,6 +12,26 @@ interface Size {
     height: number
 }
 
+
+function useAnimation(callback : (dt : number) => void) {
+    const callbackRef = useRef(callback);
+    const animationFrameRef = useRef(-1);
+    callbackRef.current = callback;
+    useEffect(() => {
+        let then = 0;
+        const update = (now : number) => {
+            const dt = (now - then) * 0.001;
+            then = now;
+            callbackRef.current(dt);
+            animationFrameRef.current = requestAnimationFrame(update);
+        }
+        animationFrameRef.current = requestAnimationFrame(update);
+
+        return () => {
+            cancelAnimationFrame(animationFrameRef.current);
+        }
+    }, []);
+}
 
 
 function calculateWheelAngles(wheelLocations : Vector2D[], steeringAngle: number, angle: number) {
@@ -35,6 +56,9 @@ function calculateWheelAngles(wheelLocations : Vector2D[], steeringAngle: number
     if(steeringAngle > 0) angles[2] += Math.PI / 2;
     else angles[2] -= Math.PI / 2;
 
+    if(Vector.mag(directions[0]) < 0.05) angles[0] = -angle
+    if(Vector.mag(directions[1]) < 0.05) angles[1] = -angle;
+    if(Vector.mag(directions[2]) < 0.05) angles[2] = -angle;
     // angles[0] -= Math.PI / 2;
     // angles[1] -= Math.PI / 2;
     // angles[2] -= Math.PI / 2;
@@ -169,7 +193,7 @@ export default function Drive() {
     const waypointAngle = Math.PI/2;
 
     const MAX_SPEED = 2;
-    const MAX_ANGULAR_SPEED_DEG = 15;
+    const MAX_ANGULAR_SPEED_DEG = 30;
     const MAX_ANGULAR_SPEED = MAX_ANGULAR_SPEED_DEG * Math.PI / 180;
 
     const steeringAngleRadians = steeringAngle * Math.PI / 180;
@@ -233,6 +257,12 @@ export default function Drive() {
         setSteeringAngleState(newSteeringAngle);
         setSpeed(speed, imaginaryWheelDist);
     }
+    const setSteeringAngleAndSpeed = (newSteeringAngle : number, newSpeed : number) => {
+        const newTurningRadius = 1 / Math.tan(newSteeringAngle * Math.PI / 180);
+        const imaginaryWheelDist = Math.sqrt(1 + newTurningRadius * newTurningRadius) * (newSteeringAngle < 0 ? -1 : 1);
+        setSteeringAngleState(newSteeringAngle);
+        setSpeed(newSpeed, imaginaryWheelDist);
+    }
 
 
     const map = (point : Vector2D) : Vector2D => {
@@ -275,7 +305,7 @@ export default function Drive() {
             ctx.stroke();
 
             {
-                const direction = (steeringAngle < 0) === (speed > 0);
+                const direction = (steeringAngle < 0) === (speed >= 0);
                 const arcLength = 100;
                 drawDirectionArc(ctx, turningCircleCenterMapped, { x: size.width/2, y: size.height/2 }, arcLength, direction, size);
 
@@ -335,6 +365,56 @@ export default function Drive() {
             setCtx(canvas.current.getContext("2d"));
         }
     }, [])
+    const changeSubsystemController = useChangeSubsystemController();
+    useGamepadConnect((gamepad) => {
+        // console.log
+        changeSubsystemController((controllers) => {
+            if(controllers.drive == -1){
+                console.log("Using ", gamepad, " as drive controller");
+                return {...controllers, drive: gamepad.index}
+            }else {
+                return controllers;
+            }
+        });
+    });
+
+    const driveController = useDriveController();
+    // const lastTimestamp = useRef(-1);
+    useAnimation((dt) => {
+
+        const newController = navigator.getGamepads().find((gamepad) => gamepad?.buttons[9].pressed) as Gamepad
+        if(newController){
+            changeSubsystemController((controllers) => {
+                return {...controllers, drive: newController.index}
+            });   
+        }
+        
+        if(driveController == -1) return;
+
+        const gamepad = navigator.getGamepads().find((gamepad) => gamepad?.index === driveController) as Gamepad;
+
+        let newSteeringAngle = steeringAngle;
+        // if(gamepad.axes[0] == 0) {
+        //     newSteeringAngle -= 0.01 * steeringAngle * dt
+        // }else {
+        // }
+        // newSteeringAngle += (15 * Math.PI / 180 * gamepad.axes[0] - 0.001 * steeringAngle) * dt;
+        newSteeringAngle += (40 * gamepad.axes[0]) * dt;
+        newSteeringAngle -= 4 * steeringAngle * dt * gamepad.buttons[0].value;
+        newSteeringAngle = Math.max(Math.min(newSteeringAngle, 90), -90);
+
+        // if(gamepad.timestamp == lastTimestamp.current) return;
+        // lastTimestamp.current = gamepad.timestamp;
+        // gamepad.buttons
+        const speed = Math.max(Math.min((gamepad.buttons[7].value - gamepad.buttons[6].value) * maxSpeed, MAX_SPEED), -MAX_SPEED);
+        // console.log(speed);
+        // const steeringAngle = (gamepad.axes[0] * 90);
+        
+        setSteeringAngleAndSpeed(newSteeringAngle, speed);
+
+    });
+
+
 
     return (
         <main className={styles["main"]}>

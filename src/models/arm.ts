@@ -59,7 +59,7 @@ export function useArm(mountPoint: Object3D, { rotunda, elbow, shoulder, wristRo
     wristPitchObj.setRotationFromAxisAngle(Axis.pitch, wristPitch);
     wristRollObj.setRotationFromAxisAngle(Axis.roll, wristRoll);
 
-    const linkageAngles = fourBarSolver(effectorPosition);
+    const linkageAngles = fourBarSolver(((25 - -40) * effectorPosition / 100) * Math.PI / 180);
 
     rightLinkage2Obj.setRotationFromAxisAngle(Axis.yaw, linkageAngles[0]);
     rightLinkage3Obj.setRotationFromAxisAngle(Axis.yaw, Math.PI-linkageAngles[1]);

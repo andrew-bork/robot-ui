@@ -1,0 +1,18 @@
+
+
+.axis-label {
+    margin-left: 10px;
+    margin-right: 10px;
+}
+.axis-label label {
+    /* font-weight: lighter; */
+    /* font-weight: lighter; */
+    color: #c8bdbd;
+    font-size: 12px;
+}
+
+.bar-indicator {
+    width: 5px;
+    height: 35px;
+    background-color: #8a8a8a;
+}
