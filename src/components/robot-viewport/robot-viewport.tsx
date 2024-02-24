@@ -81,9 +81,9 @@ export function RobotModel() {
     const [ suspensionB, wheelMountPointB ] = useSuspension(suspensionMountPointB, sus_angle * DEG_TO_RAD);
     const [ suspensionFL, wheelMountPointFL ] = useSuspension(suspensionMountPointFL, sus_angle * DEG_TO_RAD);
    
-    const [ wheelFR ] = useWheel(wheelMountPointFR, -Math.PI/6, fr * DEG_TO_RAD);
-    const [ wheelB ] = useWheel(wheelMountPointB,  Math.PI/2, b * DEG_TO_RAD);
-    const [ wheelFL ] = useWheel(wheelMountPointFL, Math.PI/6, fl * DEG_TO_RAD);
+    const [ wheelFR ] = useWheel(wheelMountPointFR, -Math.PI/6 - Math.PI/2, fr * DEG_TO_RAD);
+    const [ wheelB ] = useWheel(wheelMountPointB,  0, b * DEG_TO_RAD);
+    const [ wheelFL ] = useWheel(wheelMountPointFL, Math.PI/6 + Math.PI/2, fl * DEG_TO_RAD);
 
     const [ arm ] = useArm(rotundaMountPoint, {
         effectorPosition: effectorPosition * DEG_TO_RAD,

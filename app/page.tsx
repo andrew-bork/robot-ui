@@ -40,7 +40,7 @@ export default function Home() {
     const points = [];
     for(let i = 0; i < 360; i += 5) {
       const theta = i * DEG_TO_RAD;
-      const r = 3 * Math.sin(theta) + 5;
+      const r = 2 * Math.sin(theta) + 1;
       points.push({
         theta,
         r

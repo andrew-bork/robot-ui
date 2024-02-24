@@ -37,7 +37,7 @@ export function useChassi() {
 }
 
 export function useSuspension(mountPoint : Object3D, angle : number) {
-    const [ suspension, materials ] = useClonedGLTF("/models/Suspension-High-Quality.glb");
+    const [ suspension, materials ] = useClonedGLTF("/models/Suspension2-High-Quality.glb");
     
     useMountPoint(mountPoint, suspension);
 
@@ -69,36 +69,36 @@ export function useSuspension(mountPoint : Object3D, angle : number) {
         };
     }, [ shockUpper, shockLower, lowerSuspension ]);
 
-    const linkageSolve =  useMemo(() => {
-        const a = upperSuspension.position.clone().sub(lowerSuspension.position).length();
-        const b = upperSuspensionSocket.position.length();
-        const c = 0.064; // From Wheel
-        const d = wheelMountPoint.position.length();
+    // const linkageSolve =  useMemo(() => {
+    //     const a = upperSuspension.position.clone().sub(lowerSuspension.position).length();
+    //     const b = upperSuspensionSocket.position.length();
+    //     const c = 0.064; // From Wheel
+    //     const d = wheelMountPoint.position.length();
         
-        const initialAngle = Math.PI / 2;
+    //     const initialAngle = Math.PI / 2;
         
-        const solve = createFourbarLinkageSolver(a, b, c, d);
+    //     const solve = createFourbarLinkageSolver(a, b, c, d);
 
-        return (theta : number) => {
-            const [ a, b, c, d ] = solve(-theta + initialAngle);
-            return [
-                theta,
-                b - Math.PI/2,
-                c,
-                d - Math.PI/2,
-            ]
-        }
-    }, [ upperSuspension, lowerSuspension, upperSuspensionSocket, wheelMountPoint ]);
+    //     return (theta : number) => {
+    //         const [ a, b, c, d ] = solve(-theta + initialAngle);
+    //         return [
+    //             theta,
+    //             b - Math.PI/2,
+    //             c,
+    //             d - Math.PI/2,
+    //         ]
+    //     }
+    // }, [ upperSuspension, lowerSuspension, upperSuspensionSocket, wheelMountPoint ]);
     
-    const linkages = linkageSolve(angle);
+    // const linkages = linkageSolve(angle);
     
-    lowerSuspension.setRotationFromAxisAngle(Axis.pitch, angle);
-    upperSuspension.setRotationFromAxisAngle(Axis.pitch, angle);
-    wheelMountPoint.setRotationFromAxisAngle(Axis.pitch, -linkages[3]);
+    // lowerSuspension.setRotationFromAxisAngle(Axis.pitch, angle);
+    // upperSuspension.setRotationFromAxisAngle(Axis.pitch, angle);
+    // wheelMountPoint.setRotationFromAxisAngle(Axis.pitch, -linkages[3]);
 
-    const [ upperShockAngle, lowerShockAngle ] = shockSolve(angle);
-    shockUpper.setRotationFromAxisAngle(Axis.pitch, Math.PI/2-upperShockAngle);
-    shockLower.setRotationFromAxisAngle(Axis.pitch, -lowerShockAngle);
+    // const [ upperShockAngle, lowerShockAngle ] = shockSolve(angle);
+    // shockUpper.setRotationFromAxisAngle(Axis.pitch, Math.PI/2-upperShockAngle);
+    // shockLower.setRotationFromAxisAngle(Axis.pitch, -lowerShockAngle);
     
     return [
         suspension,
@@ -107,7 +107,7 @@ export function useSuspension(mountPoint : Object3D, angle : number) {
 }
 
 export function useWheel(mountPoint: Object3D, offset : number, angle : number) {
-    const [ wheel, materials ] = useClonedGLTF("/models/Wheel-High-Quality.glb");
+    const [ wheel, materials ] = useClonedGLTF("/models/Wheel2-High-Quality.glb");
     useMountPoint(mountPoint, wheel);
 
     const steeringAxis = useThreeSubobject(wheel, "Steering_Axis");
