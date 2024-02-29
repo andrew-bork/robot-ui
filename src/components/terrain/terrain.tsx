@@ -1,7 +1,8 @@
 import { OrbitControls } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { EffectComposer, Pixelation } from "@react-three/postprocessing";
-import { useMemo, useRef } from "react";
+import { useControls } from "leva";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createNoise2D, createNoise3D } from "simplex-noise";
 import { DataTexture, FloatType, MirroredRepeatWrapping, PlaneGeometry, RGBAFormat, RedFormat, RepeatWrapping, ShaderMaterial, Texture, Vector2 } from "three";
 
@@ -16,7 +17,7 @@ function useTerrainScannerShaders() {
     uniform float scale;
     varying vec2 v_uv;
     void main() {
-        v_uv = offset + scale * (position.xy / 2.0 + vec2(0.5, 0.5));
+        v_uv = (scale * position.xy / 2.0 + vec2(0.5, 0.5));
         gl_Position = vec4(position.xyz, 1.0);
     }
     `;
@@ -140,39 +141,77 @@ function useTerrainScannerShaders() {
         return brightness < limit ? 0.0 : 1.0;
     }
 
+    float map(float value, float min1, float max1, float min2, float max2) {
+        return min2 + (value - min1) * (max2 - min2) / (max1 - min1);
+    }
+
+    uniform float redEnd;
+    uniform float yellowBegin;
+    uniform float yellowEnd;
+    uniform float greenBegin;
+    uniform float greenEnd;
+
+
     void main() {
         vec2 sUv = gl_FragCoord.xy / resolution;
         // vec2 uv2 = 2.0 * vec2(texture2D(heightmap, v_uv + vec2(0.4, 0.0)).x, texture2D(heightmap, v_uv).x);
-        // float height = texture2D(heightmap, v_uv).x;
-        float height = blur9x9(v_uv);
+        float height = texture2D(heightmap, v_uv).x;
+        // float height = blur9x9(v_uv);
         gl_FragColor = vec4(height, height, height, 1.0);
         
-        vec3 red = vec3(1.0, 0.0, 0.0);
-        vec3 green = vec3(0.0, 1.0, 0.0);
+        vec3 red = vec3(0.8, 0.0, 0.0);
+        vec3 green = vec3(0.0, 0.4, 0.0);
+        vec3 yellow = vec3(0.4, 0.4, 0.0);
         
-        if(height > 0.5) {
-            gl_FragColor = red;
-        }else {
-            gl_FragColor = green;
+        // if(height < redLevel) {
+        //     gl_FragColor = vec4(red, 1.0);
+        // }else if(height < yellowLevel) {
+        //     gl_FragColor = vec4(yellow, 1.0);
+        // }else {
+        //     gl_FragColor = vec4(green, 1.0);
+        // }
+        
+        float alphaR = 0.0;
+        float alphaY = 0.0;
+        float alphaG = 0.0;
+        
+        if(height < redEnd) {
+            alphaR = dither4x4(gl_FragCoord.xy / 1.0, map(height, 0.0, redEnd, 0.4, 0.2));
+        }
+        if(yellowBegin < height && height < yellowEnd) {
+            alphaY = dither8x8(- gl_FragCoord.xy / 1.0, map(height, yellowBegin, yellowEnd, 0.2, 0.2));
+            // float yellowMiddle = (yellowBegin + yellowEnd) / 2.0;
+            // if(height < yellowMiddle) {
+            //     alphaY = dither8x8(- gl_FragCoord.xy / 1.0, map(height, yellowBegin, yellowMiddle, 0.05, 0.2));
+            // }else {
+            //     alphaY = dither8x8(gl_FragCoord.xy / 1.0, map(height, yellowMiddle, yellowEnd, 0.2, 0.05));
+            // }
         }
         
-        float alpha = dither4x4(gl_FragCoord.xy / 16.0, 0.25 - 0.25 * clamp(height, 0.0, 0.25));
-        float alpha2 = dither4x4(-gl_FragCoord.xy / 16.0, 0.25 * clamp(height, 0.125,0.5));
+        if(height < greenEnd && height > greenBegin) {
+            alphaG = dither8x8(- gl_FragCoord.xy / 1.0, map(height, greenBegin, greenEnd, 0.2, 0.05));
+            // float greenMiddle = (greenBegin + greenEnd) / 2.0;
+            // if(height < greenMiddle) {
+            //     alphaG = dither8x8(- gl_FragCoord.xy / 1.0, map(height, greenBegin, greenMiddle, 0.05, 0.2));
+            // }else {
+            //     alphaG = dither8x8(- gl_FragCoord.xy / 1.0, map(height, greenMiddle, greenEnd, 0.2, 0.05));
+            // }
+        }
         
-        // gl_FragColor = vec4(red * alpha + green * alpha2, 1.0);
+        gl_FragColor = vec4(red * alphaR + green * alphaG + yellow * alphaY, 1.0);
 
     }
     `;
-    return {
+    return useMemo(() => ({
         SCANNER_FS,
         SCANNER_VS
-    };
+    }), []);
 }
 
 
 function useHeightmapShaders() {
     
-    const HEIGHTMAP_VS = `
+    const HEIGHTMAP_VS = useMemo(() => `
     uniform sampler2D heightmap;
     uniform vec2 offset;
     uniform float scale;
@@ -203,9 +242,9 @@ function useHeightmapShaders() {
         v_position = position;
         gl_Position = projectedPosition;
     }
-    `;
+    `, []);
 
-    const HEIGHTMAP_FS = `
+    const HEIGHTMAP_FS = useMemo(() =>`
     uniform sampler2D heightmap;
     varying vec3 v_position;
     varying vec3 v_normal;
@@ -226,7 +265,7 @@ function useHeightmapShaders() {
         gl_FragColor = vec4(light_amount, light_amount, light_amount, 1.0);
         // gl_FragColor = vec4(v_normal * 0.5 + 0.5, 1.0);
     }
-    `;
+    `, []);
     return {
         HEIGHTMAP_VS,
         HEIGHTMAP_FS
@@ -238,6 +277,7 @@ function useHeightmapShaders() {
 function useHeightmapTexture(xa : number, ya: number) {
 
     const texture = useMemo(() => {
+        console.log("Generating heightmap");
         const noise2D = createNoise2D();
         const pers = 0.4;
         const lac = 2.1;
@@ -265,9 +305,9 @@ function useHeightmapTexture(xa : number, ya: number) {
                 let j = (y * width + x) * 1;
                 const x2 = x / width - 0.5;
                 const y2 = y / width - 0.5;
-                const value = sample(x2 * 1 + xa, y2 * 1 + ya);
+                const value = sample(x2 * 10 + xa, y2 * 10 + ya);
                 // const value = 1;
-                const x3 = value * (Math.exp(-10 * (x2 * x2 + y2 * y2)));
+                const x3 = value * (Math.exp(-5 * (x2 * x2 + y2 * y2)));
                 // const y2 = sample(x / width * 1 + xa + 1000, y / width * 1 + ya);
                 // data[j+0] = sample(x2, y2);
                 data[j+0] = x3;
@@ -286,15 +326,17 @@ function useHeightmapTexture(xa : number, ya: number) {
         texture.wrapS = MirroredRepeatWrapping;
         texture.wrapT = MirroredRepeatWrapping;
         texture.needsUpdate = true;
+        console.log("Done!");
         return texture;
     }, []);
 
     return texture;
 }
 
-function TerrainScanner() {
+function TerrainScanner({ x=0, y=0, scale=0 }: { x?: number, y?: number, scale?: number }) {
     const { SCANNER_VS, SCANNER_FS, } = useTerrainScannerShaders();
     const viewport = useThree(state => state.viewport);
+    const size = useThree(state => state.size);
 
     const heightMap = useHeightmapTexture(0, 0);
     
@@ -307,10 +349,25 @@ function TerrainScanner() {
                 value: new Vector2(0, 0)
             },
             scale: {
-                value: 1
+                value: 0.3
             },
             resolution: {
                 value: new Vector2(1, 1)
+            },
+            redEnd: {
+                value: 0.25
+            },
+            yellowBegin: {
+                value: 0.25
+            },
+            yellowEnd: {
+                value: 0.55
+            },
+            greenBegin: {
+                value: 0.55
+            },
+            greenEnd: {
+                value: 0.60
             }
 
         };
@@ -318,21 +375,67 @@ function TerrainScanner() {
     
     const shader = useRef<ShaderMaterial>(null!);
 
+    const { redEnd, yellowBegin, yellowEnd, greenBegin, greenEnd } = useControls({
+        redEnd: {
+            value: 0.25
+        },
+        yellowBegin: {
+            value: 0.25
+        },
+        yellowEnd: {
+            value: 0.35
+        },
+        greenBegin: {
+            value: 0.35
+        },
+        greenEnd: {
+            value: 0.58
+        }
+    })
+
     const noise = useMemo(() => createNoise3D(), []);
     const t = useRef(0);
     useFrame((a, dt) => {
-        t.current += dt;
-        const pos = shader.current.uniforms.offset.value;
-        const scale = shader.current.uniforms.scale.value;
-        pos.x += 0.5 * scale * dt;
-        shader.current.uniforms.resolution.value.x = viewport.width * viewport.dpr;
-        shader.current.uniforms.resolution.value.y = viewport.height * viewport.dpr;
+        // t.current += dt;
+        // const pos = shader.current.uniforms.offset.value;
+        // const scale = shader.current.uniforms.scale.value;
+        // pos.x += 0.1 * scale * dt;
+        // shader.current.uniforms.resolution.value.x = viewport.width * viewport.dpr;
+        // shader.current.uniforms.resolution.value.y = viewport.height * viewport.dpr;
         // pos.x += noise(0,0, t.current) * scale * dt;
-        // console.log(pos.x)
+
         // pos.y += noise(0, 0, t.current) * scale * dt;
-        shader.current.uniformsNeedUpdate = true;
+        // shader.current.uniformsNeedUpdate = true;
     });
+    useEffect(() => {
+        shader.current.uniforms.redEnd.value = redEnd;
+        shader.current.uniforms.yellowEnd.value = yellowEnd;
+        shader.current.uniforms.greenEnd.value = greenEnd;
+        shader.current.uniforms.yellowBegin.value = yellowBegin;
+        shader.current.uniforms.greenBegin.value = greenBegin;
+        shader.current.uniformsNeedUpdate = true;
+    }, [ redEnd, yellowBegin, yellowEnd, greenBegin, greenEnd]);
+    useEffect(() => {
+        shader.current.uniforms.resolution.value = new Vector2(size.width, size.height);
+    }, [size]);
+    useEffect(() => {
+        // console.log(viewport);
+        const scale = shader.current.uniforms.scale.value;
+
+        shader.current.uniforms.offset.value  = new Vector2(-scale * x / (size.width), scale * y / (size.height));
+        shader.current.uniformsNeedUpdate = true;
+    }, [x, y, size ]);
+    useEffect(() => {
+        shader.current.uniforms.scale.value = scale;
+        shader.current.uniformsNeedUpdate = true;
+
+    }, [scale])
     
+    useEffect(() => {
+        shader.current.uniforms.heightmap.value = heightMap;
+        shader.current.uniformsNeedUpdate = true;
+    }, [heightMap])
+
     return <mesh rotation={[0, 0, 0]}>
             <planeGeometry args={[2, 2]}/>
             <shaderMaterial
@@ -345,29 +448,35 @@ function TerrainScanner() {
 }
 
 export function TerrainView() {
-    const { HEIGHTMAP_VS, HEIGHTMAP_FS } = useHeightmapShaders();
 
-    const heightMap = useHeightmapTexture(0, 0);
-    
-    const uniforms = useMemo(() => {
-        return {
-            heightmap: { 
-                value: heightMap
-            },
-            offset: {
-                value: new Vector2(0, 0)
-            },
-            scale: {
-                value: 1
-            },
+    const [ zoomLevel, setZoomLevel] = useState(1);
 
-        };
-    }, [heightMap]);
+    useEffect(() => {
+        const handler = (e : WheelEvent) => {
+            setZoomLevel((z) => Math.max(0, z + 0.001 * e.deltaY));
+        }
+        window.addEventListener("wheel", handler);
+        return () => {
+            window.removeEventListener("wheel", handler);
+        }
+    })
 
-    const shader = useRef<ShaderMaterial>(null!);
-
-
-    return <Canvas>
+    const [ offset, setOffset ] = useState({ x: 0, y: 0 });
+    const mousePressed = useRef(false);
+    return <Canvas 
+    onMouseDown={() => {
+        mousePressed.current = true;
+    }} onMouseMove={(e) => {
+        if(mousePressed.current) {
+            setOffset((offset) => ({
+                x: offset.x + e.movementX,
+                y: offset.y + e.movementY,
+            }));
+        }
+    }} onMouseUp={() => {
+        mousePressed.current = false;
+    }}
+    >
     {/* <mesh rotation={[-Math.PI/2, 0, 0]} position={[0, 0, 0]} scale={[10, 10, 1]}>
         <planeGeometry args={[1, 1, 512, 512]} />
         <shaderMaterial
@@ -379,13 +488,13 @@ export function TerrainView() {
         />
     </mesh> */}
         
-        <TerrainScanner/>
-        <EffectComposer>
+        <TerrainScanner x={offset.x} y={offset.y} scale={Math.pow(10, -zoomLevel)}/>
+        {/* <EffectComposer>
         <Pixelation
-    granularity={1} // pixel granularity
+    granularity={10} // pixel granularity
   />
 
-        </EffectComposer>
+        </EffectComposer> */}
 
         <ambientLight intensity={0.1} />
         <directionalLight color="red" position={[0, 1, 5]} />

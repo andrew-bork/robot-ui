@@ -1,6 +1,7 @@
 "use client"
 
 import { ReactElement, useMemo } from "react";
+import { TerrainView } from "../terrain/terrain";
 
 /**
  * This is a navigation display based on the Boeing 737 Navigation display.
@@ -110,7 +111,7 @@ function DistanceRings({ viewportSize, ringDist } : { viewportSize : number, rin
     return (<g stroke="#dddddd">
         {rings.map((ring, i) => {
             return <g key={i}>
-                <circle cx={16} cy={16} r={12 * ring.dist / viewportSize} strokeWidth={0.5} vectorEffect="non-scaling-stroke"></circle>
+                <circle cx={16} cy={16} r={12 * ring.dist / viewportSize} strokeWidth={0.8} vectorEffect="non-scaling-stroke"></circle>
                 <text x={16.3 + 12 * ring.dist / viewportSize} y={16} fontSize={0.6} stroke="none" fill="#ffffff">{ring.text}</text>
             </g>
         })}
@@ -187,60 +188,65 @@ export function NavigationPanel(args : NavigationPanelArgs) {
 
     
 
-    return (<svg version="1.1" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" stroke="#ffffff" fill="none">
-        <circle cx={16} cy={16} r={12} strokeWidth={2} vectorEffect="non-scaling-stroke"></circle>
-        <clipPath id="nav-track-clip">
-            <circle cx={16} cy={16} r={12} ></circle>
-        </clipPath>
+    return (<div style={{position: "relative"}}>
+        <svg version="1.1" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" stroke="#ffffff" fill="none">
+            <circle cx={16} cy={16} r={12} strokeWidth={2} vectorEffect="non-scaling-stroke"></circle>
+            <clipPath id="nav-track-clip">
+                <circle cx={16} cy={16} r={12} ></circle>
+            </clipPath>
 
-        <DistanceRings viewportSize={args.viewportSize} ringDist={1}/>
+            <DistanceRings viewportSize={args.viewportSize} ringDist={1}/>
 
-        <g clipPath="url(#nav-track-clip)">
-            {args.lidar != null ? 
-                <g stroke="#aa3322">
-                    {
-                        args.lidar.map((point, i) => {
-                            return <g key={i} transform={`rotate(${point.theta * RAD_TO_DEG}, 16, 16) translate(16 ${16 - 12 * point.r / args.viewportSize}) rotate(${(-point.theta) * RAD_TO_DEG})`} >
-                                <LidarMarker/>
-                            </g>
-                        })
-                    }
-                </g>
-            : <></>}
-        </g>
-        
-        <g transform={`rotate(${-heading * RAD_TO_DEG}, 16, 16)`}>
-            <TickmarkTrack tickSpace={5 * DEG_TO_RAD} primaryTickPeriod={6} secondaryTickPeriod={2}/>
-
-            {args.headingSetpoint != null ? <g stroke="#dc61f2" transform={`rotate(${args.headingSetpoint * RAD_TO_DEG}, 16, 16)`}>
-                <line x1={16} y1={4} x2={16} y2={16} strokeWidth={2} strokeDasharray="8" vectorEffect="non-scaling-stroke"></line>
-                <path d="M 16 4 l 0.5 0 l 0 -0.5 l -0.25 0 l -0.25 0.35 l -0.25 -0.37 l -0.25 0 l 0 0.5 z" strokeWidth={2} vectorEffect="non-scaling-stroke"></path>
-            </g> : <></>}
-            
             <g clipPath="url(#nav-track-clip)">
-                {args.waypoints != null ? 
-                    args.waypoints.map((waypoint, i) => {
-                        
-                        const bearing = SphericalNavigation.getForwardAzimuthBetween(args.location, waypoint.location);
-                        const distance = SphericalNavigation.getDistanceBetween(args.location, waypoint.location);
-
-                        return (<g key={i} transform={`rotate(${bearing * RAD_TO_DEG}, 16, 16) translate(16 ${16 - 12 * distance / args.viewportSize}) rotate(${(heading - bearing) * RAD_TO_DEG})`}>
-                            <WaypointMarker/>
-                            {(waypoint.label != null ? <text x={0.7} y={0.7} fontSize={0.6} stroke="none" fill="#ffffff">{waypoint.label}</text> : <></>)}
-                        </g>)
-                    }) 
-                : <></>}
-                
+                {/* {args.lidar != null ? 
+                    <g stroke="#aa3322">
+                        {
+                            args.lidar.map((point, i) => {
+                                return <g key={i} transform={`rotate(${point.theta * RAD_TO_DEG}, 16, 16) translate(16 ${16 - 12 * point.r / args.viewportSize}) rotate(${(-point.theta) * RAD_TO_DEG})`} >
+                                    <LidarMarker/>
+                                </g>
+                            })
+                        }
+                    </g>
+                : <></>} */}
             </g>
-        </g>
-        
-        <text x={16} y={2.0} fontSize={1} textAnchor="middle" dominantBaseline="middle" fill="#ffffff" stroke="none">{nearestDegree(heading)}°</text>
-        <rect x={14.5} y={1.2} width={3} height={1.5} strokeWidth={2} vectorEffect="non-scaling-stroke"></rect>
-        <path d="M 16 3.5 l 0.25 -0.5 l -0.5 0 z" strokeWidth={2} vectorEffect="non-scaling-stroke"></path>
-        <line x1={16} y1={4} x2={16} y2={15.5} strokeWidth={1.5} vectorEffect="non-scaling-stroke"></line>
+            
+            <text x={16} y={2.0} fontSize={1} textAnchor="middle" dominantBaseline="middle" fill="#ffffff" stroke="none">{nearestDegree(heading)}°</text>
+            <rect x={14.5} y={1.2} width={3} height={1.5} strokeWidth={2} vectorEffect="non-scaling-stroke"></rect>
+            <path d="M 16 3.5 l 0.25 -0.5 l -0.5 0 z" strokeWidth={2} vectorEffect="non-scaling-stroke"></path>
+            <line x1={16} y1={4} x2={16} y2={15.5} strokeWidth={1.5} vectorEffect="non-scaling-stroke"></line>
 
-        <path d="M 16 16 l 0.2 0.4 l -0.4 0 z" strokeWidth={1.5} vectorEffect="non-scaling-stroke"></path>
-    </svg>)
+            <path d="M 16 16 l 0.2 0.4 l -0.4 0 z" strokeWidth={1.5} vectorEffect="non-scaling-stroke"></path>
+            
+            <g transform={`rotate(${-heading * RAD_TO_DEG}, 16, 16)`}>
+                <TickmarkTrack tickSpace={5 * DEG_TO_RAD} primaryTickPeriod={6} secondaryTickPeriod={2}/>
+
+
+{args.headingSetpoint != null ? <g stroke="#dc61f2" transform={`rotate(${args.headingSetpoint * RAD_TO_DEG}, 16, 16)`}>
+                    <line x1={16} y1={4} x2={16} y2={16} strokeWidth={2} strokeDasharray="8" vectorEffect="non-scaling-stroke"></line>
+                    <path d="M 16 4 l 0.5 0 l 0 -0.5 l -0.25 0 l -0.25 0.35 l -0.25 -0.37 l -0.25 0 l 0 0.5 z" strokeWidth={2} vectorEffect="non-scaling-stroke"></path>
+                </g> : <></>}
+                <g clipPath="url(#nav-track-clip)">
+                    {args.waypoints != null ? 
+                        args.waypoints.map((waypoint, i) => {
+                            
+                            const bearing = SphericalNavigation.getForwardAzimuthBetween(args.location, waypoint.location);
+                            const distance = SphericalNavigation.getDistanceBetween(args.location, waypoint.location);
+
+                            return (<g key={i} transform={`rotate(${bearing * RAD_TO_DEG}, 16, 16) translate(16 ${16 - 12 * distance / args.viewportSize}) rotate(${(heading - bearing) * RAD_TO_DEG})`}>
+                                <WaypointMarker/>
+                                {(waypoint.label != null ? <text x={0.7} y={0.7} fontSize={0.6} stroke="none" fill="#ffffff">{waypoint.label}</text> : <></>)}
+                            </g>)
+                        }) 
+                    : <></>}
+                </g>
+            </g>
+        </svg>
+        <div style={{position: "absolute", left: "0", top: "0", width: "100%", height: "100%", zIndex: "-1", clipPath: "circle(37.5%)"}}>
+            <TerrainView/>
+        </div>
+        </div>
+    )
 
 }
 
