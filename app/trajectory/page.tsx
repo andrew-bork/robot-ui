@@ -172,17 +172,6 @@ export default function Trajectory() {
     }, [curr, f]);
     
     return <main>
-        {/* <div style={{
-            position: `absolute`,
-            left:`50%`,
-            top:`50%`,
-            transform: `skew(0,15deg)`,
-            border: `1px solid white`,
-            width: `100px`,
-            height: `200px`,
-        }}>
-            <h3>0m</h3>
-        </div> */}
         <Canvas
             linear
             camera={{fov: 75, near: 0.001, far: 1000, position: [0, 0, 2]}}
@@ -190,19 +179,9 @@ export default function Trajectory() {
                 setZoom((z) => z + e.deltaY);
             }}
             >
-        {/* <Suspense fallback={<Loader/>}> */}
-            {/* <SelectableBackground/> */}
-            
-            {/* <FollowingLight color={0xffffff} intensity={1} position={[0, 0, 1]}/> */}
             <OrbitControls makeDefault enableZoom={false}/>
-            {/* <RobotModel/> */}
-            {/* <Grid/> */}
             <>
         <mesh 
-            // onClick={(e) => setTargeted(e.object)} 
-            // onPointerMissed={() => setTargeted(null)}
-            // onPointerOver={() => setHovered(true)} 
-            // onPointerOut={() => setHovered(false)}
             scale={[0.03,0.03,0.03]}
         >
         <boxGeometry/>
@@ -213,20 +192,10 @@ export default function Trajectory() {
         <Line          
             scale={[f, f, f]}
             points={points} 
-            color={"#23aaff"}       // Default
+            color={"#23aaff"}
             lineWidth={3}  
-            // dashed={true}
-            // dashSize={0.005}
-            // gapSize={0.005}
-            // fog={true}
-
-            // dashScale={0.001}
             />
-        {/* {targeted ? <TransformControls object={targeted}/> : <></>} */}
     </>
-            {/* <gridHelper/> */}
-            {/* <DraggableBox/> */}
-        {/* </Suspense> */}
         </Canvas>
     </main>
 }
