@@ -1,0 +1,41 @@
+
+
+.main {
+    /* display: flex; */
+    /* flex-direction: row; */
+    height: 100%;
+    width: 100%;
+    display: grid;
+    grid-template-columns: 300px auto 300px;
+}
+
+.left-sidebar, .right-sidebar {
+    min-width: 300px;
+}
+
+.center-container {
+    flex-grow: 2;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.left-sidebar {
+    border-right: 1px solid #646464;
+}
+
+.right-sidebar {
+    border-left: 1px solid #646464;
+}
+
+.trajectory-container {
+    flex-grow: 2;
+}
+
+.timeline-container {
+    /* height: 300px; */
+    border-top: 1px solid #646464;
+    /* width: 100%; */
+    position: relative;
+
+}
